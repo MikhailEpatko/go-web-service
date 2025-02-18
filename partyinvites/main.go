@@ -74,6 +74,7 @@ func formHandler(
 	} else if request.Method == http.MethodPost {
 		if err := request.ParseForm(); err != nil {
 			log.Println(err)
+			return
 		}
 		responseData := Rsvp{
 			Name:       request.Form["name"][0],
