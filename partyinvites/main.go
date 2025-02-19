@@ -39,21 +39,16 @@ func loadTemplates() {
 
 func welcomeHandler(
 	writer http.ResponseWriter,
-	request *http.Request,
+	_ *http.Request,
 ) {
-
-	if err := templates["welcome"].Execute(writer, struct{}{}); err != nil {
-		log.Println(err)
-	}
+	_ = templates["welcome"].Execute(writer, struct{}{})
 }
 
 func listHandler(
 	writer http.ResponseWriter,
-	request *http.Request,
+	_ *http.Request,
 ) {
-	if err := templates["list"].Execute(writer, responses); err != nil {
-		log.Println(err)
-	}
+	_ = templates["list"].Execute(writer, responses)
 }
 
 type formData struct {
@@ -66,11 +61,9 @@ func formHandler(
 	request *http.Request,
 ) {
 	if request.Method == http.MethodGet {
-		if err := templates["form"].Execute(writer, formData{
+		_ = templates["form"].Execute(writer, formData{
 			Rsvp: &Rsvp{}, Errors: []string{},
-		}); err != nil {
-			log.Println(err)
-		}
+		})
 	} else if request.Method == http.MethodPost {
 		if err := request.ParseForm(); err != nil {
 			log.Println(err)
@@ -82,34 +75,35 @@ func formHandler(
 			Phone:      request.Form["phone"][0],
 			WillAttend: request.Form["willattend"][0] == "true",
 		}
-		errors := []string{}
-		if responseData.Name == "" {
-			errors = append(errors, "Please enter your name")
-		}
-		if responseData.Email == "" {
-			errors = append(errors, "Please enter your email")
-		}
-		if responseData.Phone == "" {
-			errors = append(errors, "Please enter your phone number")
-		}
+		errors := errors(responseData)
 		if len(errors) > 0 {
-			templates["form"].Execute(writer, formData{
+			_ = templates["form"].Execute(writer, formData{
 				Rsvp:   &responseData,
 				Errors: errors,
 			})
 		} else {
 			responses = append(responses, &responseData)
 			if responseData.WillAttend {
-				if err := templates["thanks"].Execute(writer, responseData.Name); err != nil {
-					log.Println(err)
-				}
+				_ = templates["thanks"].Execute(writer, responseData.Name)
 			} else {
-				if err := templates["sorry"].Execute(writer, responseData.Name); err != nil {
-					log.Println(err)
-				}
+				_ = templates["sorry"].Execute(writer, responseData.Name)
 			}
 		}
 	}
+}
+
+func errors(responseData Rsvp) []string {
+	errors := make([]string, 0, 3)
+	if responseData.Name == "" {
+		errors = append(errors, "Please enter your name")
+	}
+	if responseData.Email == "" {
+		errors = append(errors, "Please enter your email")
+	}
+	if responseData.Phone == "" {
+		errors = append(errors, "Please enter your phone number")
+	}
+	return errors
 }
 
 func main() {
