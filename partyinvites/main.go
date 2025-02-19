@@ -26,8 +26,8 @@ func loadTemplates() {
 	}
 	for i, name := range templateNames {
 		if t, err := template.ParseFiles(
-			"static/"+"layout"+".html",
-			"static/"+name+".html",
+			"templates/"+"layout"+".html",
+			"templates/"+name+".html",
 		); err != nil {
 			panic(err)
 		} else {
@@ -82,14 +82,31 @@ func formHandler(
 			Phone:      request.Form["phone"][0],
 			WillAttend: request.Form["willattend"][0] == "true",
 		}
-		responses = append(responses, &responseData)
-		if responseData.WillAttend {
-			if err := templates["thanks"].Execute(writer, responseData.Name); err != nil {
-				log.Println(err)
-			}
+		errors := []string{}
+		if responseData.Name == "" {
+			errors = append(errors, "Please enter your name")
+		}
+		if responseData.Email == "" {
+			errors = append(errors, "Please enter your email")
+		}
+		if responseData.Phone == "" {
+			errors = append(errors, "Please enter your phone number")
+		}
+		if len(errors) > 0 {
+			templates["form"].Execute(writer, formData{
+				Rsvp:   &responseData,
+				Errors: errors,
+			})
 		} else {
-			if err := templates["sorry"].Execute(writer, responseData.Name); err != nil {
-				log.Println(err)
+			responses = append(responses, &responseData)
+			if responseData.WillAttend {
+				if err := templates["thanks"].Execute(writer, responseData.Name); err != nil {
+					log.Println(err)
+				}
+			} else {
+				if err := templates["sorry"].Execute(writer, responseData.Name); err != nil {
+					log.Println(err)
+				}
 			}
 		}
 	}
